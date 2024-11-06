@@ -1,0 +1,10 @@
+{
+  "short_name": "Nodi v2 modular example",
+  "name": "Nodi v2 modular example",
+  "icons": [
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
