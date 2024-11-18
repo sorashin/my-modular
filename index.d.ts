@@ -278,6 +278,24 @@ export type Vector4<T = number> = SVector<T, 4>;
 export type Transform3<T = number> = FixedLengthArray<T, 16>;
 
 
+export type GraphMappingTypes = "None" | "Bezier" | "Linear" | "Sine";
+
+export interface Prune<T, U> {
+    connectedComponents: SubGraph<T, U>[];
+    bypass: Connection[] | undefined;
+}
+
+export interface Connection {
+    source: NodeParameter<OutputId>;
+    destination: NodeParameter<InputId>;
+}
+
+export interface NodeParameter<T> {
+    nodeId: NodeId;
+    parameterId: T;
+    parameterIndex: number;
+}
+
 /**
  * Defines the dynamics of an IO parameter.
  */
@@ -301,30 +319,6 @@ export interface NodePropertyRangeValue {
 }
 
 export type NodePropertyValue = { type: "Number"; content: number } | { type: "Range"; content: NodePropertyRangeValue } | { type: "Range2d"; content: [NodePropertyRangeValue, NodePropertyRangeValue] } | { type: "String"; content: string } | { type: "Bool"; content: boolean } | { type: "NumberVector"; content: number[] } | { type: "Category"; content: NodePropertyCategoryValue } | { type: "Vector2d"; content: [number, number] } | { type: "Vector3d"; content: [number, number, number] } | { type: "Point2d"; content: [number, number] } | { type: "Point3d"; content: [number, number, number] } | { type: "Points2d"; content: [number, number][] };
-
-export interface IOManager<T, U> {
-    parameters: IOParameter<T, U>[];
-}
-
-export interface Connection {
-    source: NodeParameter<OutputId>;
-    destination: NodeParameter<InputId>;
-}
-
-export interface NodeParameter<T> {
-    nodeId: NodeId;
-    parameterId: T;
-    parameterIndex: number;
-}
-
-export interface SubGraphNode {
-    sources: NodeId[];
-    destinations: NodeId[];
-}
-
-export interface SubGraph<T, U> {
-    nodes: IndexMap<NodeId, SubGraphNode<T, U>>;
-}
 
 /**
  * Graph structure
@@ -351,12 +345,18 @@ export type OutputIOManager = IOManager<OutputId, InputId>;
 
 export type InputIOManager = IOManager<InputId, OutputId>;
 
-export interface Prune<T, U> {
-    connectedComponents: SubGraph<T, U>[];
-    bypass: Connection[] | undefined;
+export interface SubGraphNode {
+    sources: NodeId[];
+    destinations: NodeId[];
 }
 
-export type GraphMappingTypes = "None" | "Bezier" | "Linear" | "Sine";
+export interface SubGraph<T, U> {
+    nodes: IndexMap<NodeId, SubGraphNode<T, U>>;
+}
+
+export interface IOManager<T, U> {
+    parameters: IOParameter<T, U>[];
+}
 
 
 export type LineCurve3D = {
@@ -469,6 +469,70 @@ export interface HemisphereSurface {
     radius: number;
 }
 
+
+export type BoundingBox3D = {
+    min: Vector3;
+    max: Vector3;
+};
+
+/**
+ * Interop proxy for various geometry types
+ */
+export type GeometryInterop = { variant: "Mesh"; data: MeshInterop } | { variant: "Curve"; data: CurveInterop } | { variant: "Point"; data: PointCloudInterop } | { variant: "Plane"; data: Plane } | { variant: "Group"; data: GeometryInterop[] };
+
+/**
+ * Interop struct for curve data
+ */
+export interface CurveInterop {
+    /**
+     * Vertices of the curve
+     */
+    vertices: [number, number, number][];
+    /**
+     * Transform matrix of the curve
+     */
+    transform: Transform3<number> | undefined;
+}
+
+export interface Domain {
+    min: number;
+    max: number;
+}
+
+/**
+ * Plane representation with origin, normal, x axis, and y axis
+ */
+export interface Plane {
+    /**
+     * Origin coordinate of the plane
+     */
+    origin: Point3<number>;
+    /**
+     * Normal vector of the plane
+     */
+    normal: Vector3<number>;
+    /**
+     * X axis of the plane
+     */
+    xAxis: Vector3<number>;
+    /**
+     * Y axis of the plane
+     */
+    yAxis: Vector3<number>;
+}
+
+
+export type PolylineCurve3D = {
+    points: Point3[];
+};
+
+
+export type Triangle3D = {
+    a: Point3;
+    b: Point3;
+    c: Point3;
+};
+
 /**
  * Interop struct for mesh data
  */
@@ -522,70 +586,6 @@ export interface PlaneSurface {
  * Proxy for various curve types
  */
 export type CurveProxy = { variant: "Line"; data: LineCurve3D } | { variant: "Arc"; data: ArcCurve } | { variant: "Circle"; data: CircleCurve } | { variant: "Rectangle"; data: RectangleCurve } | { variant: "Polyline"; data: PolylineCurve3D } | { variant: "NURBS"; data: NurbsCurve };
-
-
-export type PolylineCurve3D = {
-    points: Point3[];
-};
-
-
-export type Triangle3D = {
-    a: Point3;
-    b: Point3;
-    c: Point3;
-};
-
-export interface Domain {
-    min: number;
-    max: number;
-}
-
-/**
- * Plane representation with origin, normal, x axis, and y axis
- */
-export interface Plane {
-    /**
-     * Origin coordinate of the plane
-     */
-    origin: Point3<number>;
-    /**
-     * Normal vector of the plane
-     */
-    normal: Vector3<number>;
-    /**
-     * X axis of the plane
-     */
-    xAxis: Vector3<number>;
-    /**
-     * Y axis of the plane
-     */
-    yAxis: Vector3<number>;
-}
-
-
-export type BoundingBox3D = {
-    min: Vector3;
-    max: Vector3;
-};
-
-/**
- * Interop proxy for various geometry types
- */
-export type GeometryInterop = { variant: "Mesh"; data: MeshInterop } | { variant: "Curve"; data: CurveInterop } | { variant: "Point"; data: PointCloudInterop } | { variant: "Plane"; data: Plane } | { variant: "Group"; data: GeometryInterop[] };
-
-/**
- * Interop struct for curve data
- */
-export interface CurveInterop {
-    /**
-     * Vertices of the curve
-     */
-    vertices: [number, number, number][];
-    /**
-     * Transform matrix of the curve
-     */
-    transform: Transform3<number> | undefined;
-}
 
 
 export type NurbsSurface3D<T = number> = {
@@ -726,13 +726,13 @@ export interface InitOutput {
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_export_2: WebAssembly.Table;
   readonly __wbindgen_export_3: WebAssembly.Table;
-  readonly closure556_externref_shim: (a: number, b: number, c: number) => void;
+  readonly closure567_externref_shim: (a: number, b: number, c: number) => void;
   readonly __externref_table_dealloc: (a: number) => void;
   readonly __externref_drop_slice: (a: number, b: number) => void;
   readonly __wbindgen_free: (a: number, b: number, c: number) => void;
   readonly __externref_table_alloc: () => number;
   readonly __wbindgen_exn_store: (a: number) => void;
-  readonly closure2454_externref_shim: (a: number, b: number, c: number, d: number) => void;
+  readonly closure2465_externref_shim: (a: number, b: number, c: number, d: number) => void;
   readonly __wbindgen_start: () => void;
 }
 
