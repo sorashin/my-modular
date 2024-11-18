@@ -1,0 +1,29 @@
+{
+  "name": "nodi-modular",
+  "type": "module",
+  "collaborators": [
+    "Masatatsu Nakamura <masatatsu.nakamura@gmail.com"
+  ],
+  "description": "Modular is a module project designed to import node graphs created in Nodi in JSON format, enabling the extraction of geometric data generated based on the node graph structure.",
+  "version": "0.0.4",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nodi3d/modular"
+  },
+  "files": [
+    "index_bg.wasm",
+    "index.js",
+    "index.d.ts"
+  ],
+  "main": "index.js",
+  "homepage": "https://github.com/Nodi3d/modular",
+  "types": "index.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ],
+  "keywords": [
+    "modeling",
+    "3d"
+  ]
+}

@@ -78,4 +78,3 @@ modular.changeNodeProperty(numberOfGrid.id, {
 const resultAfterPropertyChange = await modular.evaluate();
 
 ```
-
