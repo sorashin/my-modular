@@ -1,3 +1,6 @@
+# About
+This repository is sample of nodi-modular package
+
 # Nodi modular
 
 [![npm version](https://img.shields.io/npm/v/nodi-modular.svg?style=flat)](https://www.npmjs.com/package/nodi-modular)
