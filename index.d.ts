@@ -1,16 +1,39 @@
 /* tslint:disable */
 /* eslint-disable */
 export function do_nothing_just_tell_wasm_bindgen_to_generate_types(): void;
-/**
- * Interop struct for transform
- * Represents a 4x4 matrix as a 16-element array
- */
-export type TransformInterop = number[];
+export interface NodeConnectionInterop {
+    outputNodeId: string;
+    outputIndex: number;
+    inputNodeId: string;
+    inputIndex: number;
+    inputConnectionIndex: number | undefined;
+}
 
-export interface CurveInteropHandle {
-    count: number;
-    vertices: number;
-    transform: TransformInterop | undefined;
+/**
+ * Interop struct for evaluation results
+ */
+export interface EvaluationInterop {
+    /**
+     * Processed nodes in the latest evaluation
+     */
+    processedNodes: NodeId[];
+    /**
+     * Geometry identifiers in the latest evaluation
+     */
+    geometryIdentifiers: GeometryIdentifier[];
+}
+
+export type NodeSectionInterop = { type: "section"; content: NodeFolderInterop } | { type: "item"; content: NodeItemInterop };
+
+export interface NodeItemInterop {
+    key: string;
+    name: string;
+}
+
+export type NodeFolderInterop = IndexMap<string, NodeSectionInterop>;
+
+export interface NodeMapInterop {
+    folder: NodeFolderInterop;
 }
 
 export interface GeometrySpreadsheet {
@@ -18,10 +41,6 @@ export interface GeometrySpreadsheet {
     curves: CurveProxy[];
     surfaces: SurfaceProxy[];
     meshes: MeshInterop[];
-}
-
-export interface GroupInteropHandle {
-    objects: GeometryInteropHandleProxy[];
 }
 
 /**
@@ -89,23 +108,13 @@ export interface NodeMetaInterop {
     hasGeometry: boolean;
 }
 
-export type NodeSectionInterop = { type: "section"; content: NodeFolderInterop } | { type: "item"; content: NodeItemInterop };
+/**
+ * Interop struct for transform
+ * Represents a 4x4 matrix as a 16-element array
+ */
+export type TransformInterop = number[];
 
-export interface NodeItemInterop {
-    key: string;
-    name: string;
-}
-
-export type NodeFolderInterop = IndexMap<string, NodeSectionInterop>;
-
-export interface NodeMapInterop {
-    folder: NodeFolderInterop;
-}
-
-export interface IndicesInteropHandle {
-    count: number;
-    indices: number;
-}
+export type GeometryInteropHandleProxy = { variant: "Mesh"; data: MeshInteropHandle } | { variant: "Curve"; data: CurveInteropHandle } | { variant: "Group"; data: GroupInteropHandle };
 
 /**
  * Geometry identifier
@@ -129,24 +138,15 @@ export interface GeometryIdentifier {
     transform: TransformInterop;
 }
 
-export interface NodeCreationSetting {
-    id: NodeId;
-    variant: string;
-    name?: string;
-    label?: string;
-    inputs?: number;
-    outputs?: number;
-    properties: NodePropertyInterop[];
-    enabled?: boolean;
-    visible?: boolean;
+export interface IOInterop {
+    id: string;
+    name: string;
+    accessType: string;
+    connections: string[];
 }
 
-export interface MeshInteropHandle {
-    count: number;
-    vertices: number;
-    normals: number;
-    indices: IndicesInteropHandle | undefined;
-    transform: TransformInterop | undefined;
+export interface GroupInteropHandle {
+    objects: GeometryInteropHandleProxy[];
 }
 
 /**
@@ -201,14 +201,6 @@ export interface AdaptiveTessellationOptions {
     maxDepth: number;
 }
 
-export interface DataTreeInterop {
-    branches: IndexMap<string, string[]>;
-}
-
-export interface DataTreeFormatInterop {
-    outputs: IndexMap<string, string>;
-}
-
 export type GeometryInteropVec = GeometryInterop[];
 
 export type NodeConnectionInteropVec = NodeConnectionInterop[];
@@ -219,28 +211,41 @@ export type NodeInteropVec = NodeInterop[];
 
 export type EdgeInteropVec = EdgeInterop[];
 
-export interface IOInterop {
-    id: string;
-    name: string;
-    accessType: string;
-    connections: string[];
+export interface NodeCreationSetting {
+    id: NodeId;
+    variant: string;
+    name?: string;
+    label?: string;
+    inputs?: number;
+    outputs?: number;
+    properties: NodePropertyInterop[];
+    enabled?: boolean;
+    visible?: boolean;
 }
 
-export type GeometryInteropHandleProxy = { variant: "Mesh"; data: MeshInteropHandle } | { variant: "Curve"; data: CurveInteropHandle } | { variant: "Group"; data: GroupInteropHandle };
+export interface IndicesInteropHandle {
+    count: number;
+    indices: number;
+}
+
+export interface DataTreeInterop {
+    branches: IndexMap<string, string[]>;
+}
+
+export interface DataTreeFormatInterop {
+    outputs: IndexMap<string, string>;
+}
 
 /**
- * Interop struct for evaluation results
+ * Vector display handle for wasm interop
+ * stride = 6 (3 for point, 3 for vector)
  */
-export interface EvaluationInterop {
-    /**
-     * Processed nodes in the latest evaluation
-     */
-    processedNodes: NodeId[];
-    /**
-     * Geometry identifiers in the latest evaluation
-     */
-    geometryIdentifiers: GeometryIdentifier[];
+export interface VectorDisplayHandle {
+    count: number;
+    vertices: number;
 }
+
+export type DisplayProxyHandle = { variant: "Vector"; data: VectorDisplayHandle };
 
 
 /// Manually added types due to limitations in the `wasm-bindgen` & `tsify` crates.
@@ -271,14 +276,6 @@ export type Vector4<T = number> = SVector<T, 4>;
 export type Transform3<T = number> = FixedLengthArray<T, 16>;
 
 
-export interface NodeConnectionInterop {
-    outputNodeId: string;
-    outputIndex: number;
-    inputNodeId: string;
-    inputIndex: number;
-    inputConnectionIndex: number | undefined;
-}
-
 export interface EdgeInterop {
     source: EdgeUnitInterop<OutputId>;
     destination: EdgeUnitInterop<InputId>;
@@ -291,18 +288,21 @@ export interface EdgeUnitInterop<IO> {
 }
 
 /**
- * Defines the dynamics of an IO parameter.
+ * Curve interop handle for wasm interop
+ * stride = 3 (x, y, z)
  */
-export interface IOVariables {
-    minCount: number;
-    maxCount: number;
-    defaultCount: number;
-    offset: number;
+export interface CurveInteropHandle {
+    count: number;
+    vertices: number;
+    transform: TransformInterop | undefined;
 }
 
-export interface Prune<T, U> {
-    connectedComponents: SubGraph<T, U>[];
-    bypass: Connection[] | undefined;
+export interface MeshInteropHandle {
+    count: number;
+    vertices: number;
+    normals: number;
+    indices: IndicesInteropHandle | undefined;
+    transform: TransformInterop | undefined;
 }
 
 export interface NodePropertyCategoryValue {
@@ -320,6 +320,16 @@ export interface NodePropertyRangeValue {
 export type NodePropertyValue = { type: "Number"; content: number } | { type: "Range"; content: NodePropertyRangeValue } | { type: "Range2d"; content: [NodePropertyRangeValue, NodePropertyRangeValue] } | { type: "String"; content: string } | { type: "Bool"; content: boolean } | { type: "NumberVector"; content: number[] } | { type: "Category"; content: NodePropertyCategoryValue } | { type: "Vector2d"; content: [number, number] } | { type: "Vector3d"; content: [number, number, number] } | { type: "Point2d"; content: [number, number] } | { type: "Point3d"; content: [number, number, number] } | { type: "Points2d"; content: [number, number][] } | { type: "Buffer"; content: number[] };
 
 /**
+ * Defines the dynamics of an IO parameter.
+ */
+export interface IOVariables {
+    minCount: number;
+    maxCount: number;
+    defaultCount: number;
+    offset: number;
+}
+
+/**
  * Graph structure
  */
 export interface Graph<T, U> {
@@ -328,21 +338,6 @@ export interface Graph<T, U> {
      */
     nodes: IndexMap<NodeId, Node<T, U>>;
 }
-
-export interface SubGraphNode {
-    sources: NodeId[];
-    destinations: NodeId[];
-}
-
-export interface SubGraph<T, U> {
-    nodes: IndexMap<NodeId, SubGraphNode<T, U>>;
-}
-
-export interface IOManager<T, U> {
-    parameters: IOParameter<T, U>[];
-}
-
-export type GraphMappingTypes = "None" | "Bezier" | "Linear" | "Sine";
 
 export interface Node<T> {
     id: NodeId;
@@ -370,6 +365,103 @@ export interface NodeParameter<T> {
     parameterIndex: number;
 }
 
+export interface IOManager<T, U> {
+    parameters: IOParameter<T, U>[];
+}
+
+export interface Prune<T, U> {
+    connectedComponents: SubGraph<T, U>[];
+    bypass: Connection[] | undefined;
+}
+
+export interface SubGraphNode {
+    sources: NodeId[];
+    destinations: NodeId[];
+}
+
+export interface SubGraph<T, U> {
+    nodes: IndexMap<NodeId, SubGraphNode<T, U>>;
+}
+
+export type GraphMappingTypes = "None" | "Bezier" | "Linear" | "Sine";
+
+
+export type Triangle3D = {
+    a: Point3;
+    b: Point3;
+    c: Point3;
+};
+
+/**
+ * A circular surface
+ */
+export interface CircularSurface {
+    /**
+     * The base plane of the circle
+     */
+    plane: Plane;
+    /**
+     * The radius of the circle
+     */
+    radius: number;
+}
+
+/**
+ * Interop struct for point cloud data
+ */
+export interface PointCloudInterop {
+    /**
+     * Vertices of the point cloud
+     */
+    vertices: [number, number, number][];
+    /**
+     * Transform matrix of the point cloud
+     */
+    transform: Transform3<number>;
+}
+
+/**
+ * A surface defined by three points
+ */
+export type TriangleSurface = Triangle3D;
+
+/**
+ * Proxy for various surface types
+ */
+export type SurfaceProxy = { variant: "Circular"; data: CircularSurface } | { variant: "Triangle"; data: TriangleSurface } | { variant: "Plane"; data: PlaneSurface } | { variant: "NURBS"; data: NurbsSurface } | { variant: "Trimmed"; data: TrimmedSurface };
+
+/**
+ * Proxy for various curve types
+ */
+export type CurveProxy = { variant: "Line"; data: LineCurve3D } | { variant: "Arc"; data: ArcCurve } | { variant: "Circle"; data: CircleCurve } | { variant: "Ellipse"; data: EllipseCurve } | { variant: "Rectangle"; data: RectangleCurve } | { variant: "Polyline"; data: PolylineCurve3D } | { variant: "NURBS"; data: NurbsCurve };
+
+/**
+ * A surface defined by a plane and two domains in x and y directions
+ */
+export interface PlaneSurface {
+    /**
+     * The base plane of the surface
+     */
+    plane: Plane;
+    /**
+     * The domain in x direction
+     */
+    x: Domain;
+    /**
+     * The domain in y direction
+     */
+    y: Domain;
+}
+
+
+export type NurbsSurface3D<T = number> = {
+    control_points: Point4<T>[][];
+    u_knots: T[];
+    v_knots: T[];
+    u_degree: T;
+    v_degree: T;
+};
+
 /**
  * Plane representation with origin, normal, x axis, and y axis
  */
@@ -393,93 +485,9 @@ export interface Plane {
 }
 
 /**
- * Geometry proxy for various geometry types
+ * A NURBS surface
  */
-export type GeometryProxy = { variant: "Curve"; data: CurveProxy } | { variant: "Surface"; data: SurfaceProxy } | { variant: "Brep"; data: Brep } | { variant: "Mesh"; data: Mesh } | { variant: "BBox"; data: OrientedBox } | { variant: "Group"; data: Group };
-
-
-export type BoundingBox3D = {
-    min: Vector3;
-    max: Vector3;
-};
-
-/**
- * Mesh representation with vertices, normals, uv, and index
- */
-export interface Mesh {
-    /**
-     * Vertices of the mesh
-     */
-    vertices: Point3<number>[];
-    /**
-     * Normals of the mesh
-     */
-    normals: Vector3<number>[] | undefined;
-    /**
-     * UV coordinates of the mesh
-     */
-    uv: Vector2<number>[] | undefined;
-    /**
-     * Index of the mesh
-     */
-    index: [number, number, number][];
-}
-
-/**
- * Proxy for various curve types
- */
-export type CurveProxy = { variant: "Line"; data: LineCurve3D } | { variant: "Arc"; data: ArcCurve } | { variant: "Circle"; data: CircleCurve } | { variant: "Ellipse"; data: EllipseCurve } | { variant: "Rectangle"; data: RectangleCurve } | { variant: "Polyline"; data: PolylineCurve3D } | { variant: "NURBS"; data: NurbsCurve };
-
-/**
- * An arc curve in 3D space
- */
-export interface ArcCurve {
-    /**
-     * The base plane of the arc
-     */
-    plane: Plane;
-    /**
-     * The start angle of the arc
-     */
-    startAngle: number;
-    /**
-     * The end angle of the arc
-     */
-    endAngle: number;
-    /**
-     * The radius of the arc
-     */
-    radius: number;
-}
-
-
-export type LineCurve3D = {
-    a: Point3;
-    b: Point3;
-};
-
-export interface Domain {
-    min: number;
-    max: number;
-}
-
-/**
- * A surface defined by a plane and two domains in x and y directions
- */
-export interface PlaneSurface {
-    /**
-     * The base plane of the surface
-     */
-    plane: Plane;
-    /**
-     * The domain in x direction
-     */
-    x: Domain;
-    /**
-     * The domain in y direction
-     */
-    y: Domain;
-}
+export type NurbsSurface = NurbsSurface3D<number>;
 
 
 export type NurbsCurve3D<T = number> = {
@@ -487,20 +495,6 @@ export type NurbsCurve3D<T = number> = {
     knots: T[];
     degree: T;
 };
-
-/**
- * Interop struct for point cloud data
- */
-export interface PointCloudInterop {
-    /**
-     * Vertices of the point cloud
-     */
-    vertices: [number, number, number][];
-    /**
-     * Transform matrix of the point cloud
-     */
-    transform: Transform3<number>;
-}
 
 /**
  * Interop struct for mesh data
@@ -529,32 +523,43 @@ export interface MeshInterop {
 }
 
 /**
- * Proxy for various surface types
+ * A rectangle curve in 3D space
  */
-export type SurfaceProxy = { variant: "Circular"; data: CircularSurface } | { variant: "Triangle"; data: TriangleSurface } | { variant: "Plane"; data: PlaneSurface } | { variant: "NURBS"; data: NurbsSurface } | { variant: "Trimmed"; data: TrimmedSurface<SurfaceProxy, CurveProxy> };
+export interface RectangleCurve {
+    /**
+     * The base plane of the rectangle
+     */
+    plane: Plane;
+    /**
+     * The domain of the rectangle in the plane x axis
+     */
+    x: Domain;
+    /**
+     * The domain of the rectangle in the plane y axis
+     */
+    y: Domain;
+}
 
 export type NurbsCurve = NurbsCurve3D<number>;
 
-/**
- * Interop struct for curve data
- */
-export interface CurveInterop {
-    /**
-     * Vertices of the curve
-     */
-    vertices: [number, number, number][];
-    /**
-     * Transform matrix of the curve
-     */
-    transform: Transform3<number> | undefined;
-}
 
-
-export type Triangle3D = {
-    a: Point3;
-    b: Point3;
-    c: Point3;
+export type PolylineCurve2D = {
+    points: Point2[];
 };
+export type PolylineCurve3D = {
+    points: Point3[];
+};
+
+
+export type BoundingBox3D = {
+    min: Vector3;
+    max: Vector3;
+};
+
+export interface Domain {
+    min: number;
+    max: number;
+}
 
 /**
  * A ellipse curve in 3D space
@@ -575,6 +580,72 @@ export interface EllipseCurve {
 }
 
 /**
+ * A circle curve in 3D space
+ */
+export interface CircleCurve {
+    /**
+     * The base plane of the circle
+     */
+    plane: Plane;
+    /**
+     * The radius of the circle
+     */
+    radius: number;
+}
+
+/**
+ * An arc curve in 3D space
+ */
+export interface ArcCurve {
+    /**
+     * The base plane of the arc
+     */
+    plane: Plane;
+    /**
+     * The start angle of the arc
+     */
+    startAngle: number;
+    /**
+     * The end angle of the arc
+     */
+    endAngle: number;
+    /**
+     * The radius of the arc
+     */
+    radius: number;
+}
+
+/**
+ * Interop proxy for various geometry types
+ */
+export type GeometryInterop = { variant: "Mesh"; data: MeshInterop } | { variant: "Curve"; data: CurveInterop } | { variant: "Point"; data: PointCloudInterop } | { variant: "Plane"; data: Plane } | { variant: "Group"; data: GeometryInterop[] };
+
+/**
+ * Geometry proxy for various geometry types
+ */
+export type GeometryProxy = { variant: "Curve"; data: CurveProxy } | { variant: "Surface"; data: SurfaceProxy } | { variant: "Brep"; data: Brep } | { variant: "Mesh"; data: Mesh } | { variant: "BBox"; data: OrientedBox } | { variant: "Group"; data: Group };
+
+
+export type LineCurve3D = {
+    a: Point3;
+    b: Point3;
+};
+
+/**
+ * Interop struct for curve data
+ */
+export interface CurveInterop {
+    /**
+     * Vertices of the curve
+     */
+    vertices: [number, number, number][];
+    /**
+     * Transform matrix of the curve
+     */
+    transform: Transform3<number> | undefined;
+}
+
+/**
  * An oriented box in 3D space
  */
 export interface OrientedBox {
@@ -588,79 +659,26 @@ export interface OrientedBox {
     bounds: BoundingBox3D;
 }
 
-
-export type PolylineCurve3D = {
-    points: Point3[];
-};
-
 /**
- * A surface defined by three points
+ * Mesh representation with vertices, normals, uv, and index
  */
-export type TriangleSurface = Triangle3D;
-
-
-export type NurbsSurface3D<T = number> = {
-    control_points: Point4<T>[][];
-    u_knots: T[];
-    v_knots: T[];
-    u_degree: T;
-    v_degree: T;
-};
-
-/**
- * Interop proxy for various geometry types
- */
-export type GeometryInterop = { variant: "Mesh"; data: MeshInterop } | { variant: "Curve"; data: CurveInterop } | { variant: "Point"; data: PointCloudInterop } | { variant: "Plane"; data: Plane } | { variant: "Group"; data: GeometryInterop[] };
-
-/**
- * A NURBS surface
- */
-export type NurbsSurface = NurbsSurface3D<number>;
-
-/**
- * A circular surface
- */
-export interface CircularSurface {
+export interface Mesh {
     /**
-     * The base plane of the circle
+     * Vertices of the mesh
      */
-    plane: Plane;
+    vertices: Point3<number>[];
     /**
-     * The radius of the circle
+     * Normals of the mesh
      */
-    radius: number;
-}
-
-/**
- * A rectangle curve in 3D space
- */
-export interface RectangleCurve {
+    normals: Vector3<number>[] | undefined;
     /**
-     * The base plane of the rectangle
+     * UV coordinates of the mesh
      */
-    plane: Plane;
+    uv: Vector2<number>[] | undefined;
     /**
-     * The domain of the rectangle in the plane x axis
+     * Index of the mesh
      */
-    x: Domain;
-    /**
-     * The domain of the rectangle in the plane y axis
-     */
-    y: Domain;
-}
-
-/**
- * A circle curve in 3D space
- */
-export interface CircleCurve {
-    /**
-     * The base plane of the circle
-     */
-    plane: Plane;
-    /**
-     * The radius of the circle
-     */
-    radius: number;
+    index: [number, number, number][];
 }
 
 /**
@@ -692,7 +710,7 @@ export class Modular {
   /**
    * Get all nodes in the graph
    */
-  getNodes(): (NodeInterop)[];
+  getNodes(): NodeInterop[];
   /**
    * Change a node property with node id and property
    */
@@ -708,7 +726,7 @@ export class Modular {
   /**
    * Update the tessellation options to modify the tessellation quality for geometry interoperability
    */
-  updateTessellationOptions(options?: AdaptiveTessellationOptions): void;
+  updateTessellationOptions(options?: AdaptiveTessellationOptions | null): void;
 }
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
@@ -736,8 +754,8 @@ export interface InitOutput {
   readonly __externref_table_dealloc: (a: number) => void;
   readonly __externref_drop_slice: (a: number, b: number) => void;
   readonly __wbindgen_free: (a: number, b: number, c: number) => void;
-  readonly closure730_externref_shim: (a: number, b: number, c: any) => void;
-  readonly closure3354_externref_shim: (a: number, b: number, c: any, d: any) => void;
+  readonly closure765_externref_shim: (a: number, b: number, c: any) => void;
+  readonly closure3426_externref_shim: (a: number, b: number, c: any, d: any) => void;
   readonly __wbindgen_start: () => void;
 }
 
